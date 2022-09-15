@@ -1,4 +1,6 @@
-discord.py
+hikari[speedups]==2.0.0.dev110
+hikari-lightbulb==2.2.4
+uvloop==0.16.0; sys_platform != "win32" 
 emoji
 pyyaml
 git+https://github.com/LuisMayo/objection_engine

@@ -1,19 +1,15 @@
-from discord import Message
+import hikari
 import re
 from emoji.core import demojize
 import requests
 from objection_engine.beans.comment import Comment
 
 class Message:
-    def __init__(self, update: Message):
-        try:
-            self.user = User(update.guild.get_member(update.author.id))
-        except Exception as e:
-            self.user = User(update.author)
-            print(e)
+    def __init__(self, update: hikari.Message):
+        self.user = User(update.author)
         self.evidence = None
-        tmp = update.clean_content
-        tmp = re.sub(r'(https?)\S*', '(link)', tmp) # links
+        print(update.content)
+        tmp = re.sub(r'(https?)\S*', '(link)', update.content) # links
         tmp = demojize(tmp)
         tmp = re.sub(r'<[a]?:\w{2,32}:\d{18}>', '', tmp) # custom static and animated emojis
         tmp = re.sub(r':\w{2,32}:', '', tmp) # stock emojis
@@ -23,6 +19,7 @@ class Message:
                 tmp += ' (image)'
                 name = str(file.id) + '.png'
                 response = requests.get(file.url)
+                print(response)
                 with open(name, 'wb') as file:
                     file.write(response.content)
                 self.evidence = name
@@ -48,6 +45,6 @@ class Message:
         return Comment(user_id=self.user.id, user_name=self.user.name, text_content=self.text, evidence_path=self.evidence)
 
 class User:
-    def __init__(self, user):
-        self.name = user.display_name
+    def __init__(self, user: hikari.Member):
+        self.name = user.username
         self.id = user.id

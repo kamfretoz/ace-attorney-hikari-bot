@@ -1,7 +1,7 @@
-from discord.message import Message
+import hikari
 
 class Deletion:
-    def __init__(self, message: Message, remainingTime: int):
+    def __init__(self, message: hikari.Message, remainingTime: int):
         self.message = message
         self.remainingTime = remainingTime
     

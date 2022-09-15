@@ -1,7 +1,7 @@
 import textwrap
+import hikari
+import lightbulb
 
-from discord.ext.commands import Context
-from discord.message import Message
 from enum import Enum
 from objection_engine.beans.comment import Comment
 from typing import List
@@ -15,12 +15,12 @@ class State(Enum):
     DONE = 5
 
 class Render:
-    def __init__(self, state: State, discordContext: Context, feedbackMessage: Message, messages: List[Comment], music: str):
+    def __init__(self, state: State, discordContext: lightbulb.Context, feedbackMessage: hikari.Message, messages: List[Comment], music: str):
         self.state = state
         self.discordContext = discordContext
         self.feedbackMessage = feedbackMessage
         self.messages = messages
-        self.outputFilename = f"{str(discordContext.message.id)}.mp4"
+        self.outputFilename = f"{str(discordContext.event.message.id)}.mp4"
         self.music_code = music
 
     def getStateString(self):
@@ -56,13 +56,6 @@ class Render:
         self.state = state
         
     async def updateFeedback(self, newContent: str):
-        try:
-            newContent = textwrap.dedent(newContent).strip("\n")
-            # Feedback messages will only be updated if their content is different to the new Content, to avoid spamming Discord's API
-            if self.feedbackMessage.content != newContent:
-                await self.feedbackMessage.edit(content=newContent)
-            # If it's unable to edit/get the feedback message, it will raise an exception and that means that it no longer exists
-        except Exception as exception:
-            # If it doesn't exists, we will repost it.
-            print(f"Error: {exception}")
-            self.feedbackMessage = await self.discordContext.send(content=newContent)
+        newContent = textwrap.dedent(newContent).strip("\n")
+        # Feedback messages will only be updated if their content is different to the new Content, to avoid spamming Discord's API
+        await self.feedbackMessage.edit(content=newContent)
