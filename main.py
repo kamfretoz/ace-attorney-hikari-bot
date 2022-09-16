@@ -153,7 +153,7 @@ async def queue(context: lightbulb.Context):
     clean([], filename)
 
 @courtBot.command()
-@lightbulb.option("music", "Use alternative music", str, required = False)
+@lightbulb.option("music", "Use alternative music", str, required = False, default = "pwr")
 @lightbulb.option("numberOfMessages", "The number of messages you want to include", int, required = True)
 @lightbulb.command("render", "Start a render!", auto_defer = True, pass_options=True)
 @lightbulb.implements(lightbulb.PrefixCommand)
@@ -257,7 +257,7 @@ async def renderQueueLoop():
 
                 # If the file size is lower than the maximun file size allowed in this guild, upload it to Discord
                 fileSize = os.path.getsize(render.getOutputFilename())
-                if fileSize < render.getContext().channel.guild.filesize_limit:
+                if fileSize < 8 * 2**20:
                     await render.getContext().respond(content=render.getContext().author.mention, attachment=hikari.File(render.getOutputFilename()))
                     render.setState(State.DONE)
                     newFeedback = f"""
@@ -342,7 +342,7 @@ def clean(thread: List[Comment], filename):
 def renderThread():
     global renderQueue
     while True:
-        time.sleep(2)
+        time.sleep(3)
         try:
             for render in renderQueue:
                 if render.getState() == State.QUEUED:
