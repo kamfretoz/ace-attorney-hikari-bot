@@ -162,46 +162,49 @@ async def render(context: lightbulb.Context, numberOfMessages: int, music: str =
     feedbackMessage = await context.respond("`Checking queue...`")
     petitionsFromSameGuild = [x for x in renderQueue if x.discordContext.guild.id == context.guild.id]
     petitionsFromSameUser = [x for x in renderQueue if x.discordContext.author.id == context.author.id]
-#    try:
-    if (len(petitionsFromSameGuild) > max_per_guild):
-        raise Exception(f"Only up to {max_per_guild} renders per guild are allowed")
-    if (len(petitionsFromSameUser) > max_per_user):
-        raise Exception(f"Only up to {max_per_user} renders per user are allowed")
-    await feedbackMessage.edit(content="`Fetching messages...`")
-    if not (numberOfMessages in range(1, 151)):
-        raise Exception("Number of messages must be between 1 and 150")
-    # baseMessage is the message from which the specified number of messages will be fetch, not including itself
-    baseMessage = context.event.message.referenced_message or context.event.message
-    courtMessages = []
-    discordMessages = []
-    # If the render command was executed within a reply (baseMessage and context.Message aren't the same), we want
-    # to append the message the user replied to (baseMessage) to the 'discordMessages' list and substract 1 from
-    # 'numberOfMessages' that way we are taking the added baseMessage into consideration and avoid getting 1 extra message)
-    if not baseMessage.id == context.event.message.id:
-        numberOfMessages = numberOfMessages - 1
-        discordMessages.append(baseMessage)
-    # This will append all messages to the already existing discordMessages, if the message was a reply it should already
-    # include one message (the one it was replying to), if not: it will be empty at this point.
-    discordMessages = (
-                context.bot.rest.fetch_messages(context.channel_id, before=baseMessage)
-                .limit(numberOfMessages)
-                .reversed()
-            )
-    
-    async for discordMessage in discordMessages:
-        message = Message(discordMessage)
-        if message.text.strip():
-            courtMessages.insert(0, message.to_Comment())
-    if len(courtMessages) < 1:
-        raise Exception("There should be at least one person in the conversation.")
-    newRender = Render(State.QUEUED, context, feedbackMessage, courtMessages, music)
-    renderQueue.append(newRender)
+    try:
+        if (len(petitionsFromSameGuild) > max_per_guild):
+            raise Exception(f"Only up to {max_per_guild} renders per guild are allowed")
+        if (len(petitionsFromSameUser) > max_per_user):
+            raise Exception(f"Only up to {max_per_user} renders per user are allowed")
+        
+        await feedbackMessage.edit(content="`Fetching messages...`")
+        if not (numberOfMessages in range(1, 151)):
+            raise Exception("Number of messages must be between 1 and 150")
+        
+        # baseMessage is the message from which the specified number of messages will be fetch, not including itself
+        baseMessage = context.event.message.referenced_message or context.event.message
+        courtMessages = []
+        discordMessages = []
+        
+        # If the render command was executed within a reply (baseMessage and context.Message aren't the same), we want
+        # to append the message the user replied to (baseMessage) to the 'discordMessages' list and substract 1 from
+        # 'numberOfMessages' that way we are taking the added baseMessage into consideration and avoid getting 1 extra message)
+        if not baseMessage.id == context.event.message.id:
+            numberOfMessages = numberOfMessages - 1
+            discordMessages.append(baseMessage)
+            
+        # This will append all messages to the already existing discordMessages, if the message was a reply it should already
+        # include one message (the one it was replying to), if not: it will be empty at this point.
+        discordMessages = (
+                    context.bot.rest.fetch_messages(context.channel_id, before=baseMessage)
+                    .limit(numberOfMessages)
+                    .reversed()
+                )
 
-#    except Exception as exception:
-#
-#        exceptionEmbed = hikari.Embed(description=str(exception), color=0xff0000)
-#        await feedbackMessage.edit(embed=exceptionEmbed)
-#        addToDeletionQueue(feedbackMessage)
+        async for discordMessage in discordMessages:
+            message = Message(discordMessage)
+            if message.text.strip():
+                courtMessages.insert(0, message.to_Comment())
+        if len(courtMessages) < 1:
+            raise Exception("There should be at least one person in the conversation.")
+        newRender = Render(State.QUEUED, context, feedbackMessage, courtMessages, music)
+        renderQueue.append(newRender)
+
+    except Exception as exception:
+        exceptionEmbed = hikari.Embed(description=str(exception), color=0xff0000)
+        await feedbackMessage.edit(embed=exceptionEmbed)
+        addToDeletionQueue(feedbackMessage)
 
 @tasks.task(s=1, auto_start=True)
 async def deletionQueueLoop():
